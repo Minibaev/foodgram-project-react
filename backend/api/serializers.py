@@ -78,7 +78,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                                        recipe=obj).exists()
 
     def get_ingredients_amount(self, ingredients, recipe):
-        tags = self.initial_data.get('tags')
+        tags = self.data.get('tags')
         for tag_id in tags:
             recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
         for ingredient in ingredients:
@@ -90,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredients_amount.save()
 
     def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
+        ingredients = self.data.get('ingredients')
         ingredients_set = set()
         for ingredient in ingredients:
             if int(ingredient.get('amount')) <= 0:
@@ -105,12 +105,12 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
             ingredients_set.add(ingredient_id)
         data['ingredients'] = ingredients
-        if int(self.initial_data.get('cooking_time')) <= 0:
+        if int(self.data.get('cooking_time')) <= 0:
             raise serializers.ValidationError(
                 ('''Время приготовления должно быть
                  больше нуля''')
             )
-        tags = self.initial_data.get('tags')
+        tags = self.data.get('tags')
         if tags is None:
             raise serializers.ValidationError(
                 ('Тег не должен отсутствовать')
@@ -130,7 +130,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         self.get_ingredients_amount(ingredients, instance)
         if validated_data.get('image') is not None:
-            instance.image = validated_data.get('image')
+            super().update(validated_data.get('image'))
         instance.name = validated_data.get('name')
         instance.text = validated_data.get('text')
         instance.cooking_time = validated_data.get('cooking_time')
@@ -183,9 +183,9 @@ class ShowFollowerSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    queryset = User.objects.all()
-    user = serializers.PrimaryKeyRelatedField(queryset=queryset)
-    author = serializers.PrimaryKeyRelatedField(queryset=queryset)
+
+    user = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    author = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Follow

@@ -1,4 +1,5 @@
 from django.http.response import HttpResponse
+from django.db.models import Sum
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -86,10 +87,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
-    @action(detail=True, permission_classes=[IsAuthenticated])
-    def favorite(self, request, pk=None):
+    def users(self, request):
         user = request.user
+        return user
+
+    def recipes(self, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
+        return recipe
+
+    @action(detail=True, permission_classes=[IsAuthenticated])
+    def favorite(self, request):
+        user = RecipeViewSet.users()
+        recipe = RecipeViewSet.recipes()
 
         data = {
             'user': user.id,
@@ -104,9 +113,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
-    def delete_favorite(self, request, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
+    def delete_favorite(self):
+        user = RecipeViewSet.users()
+        recipe = RecipeViewSet.recipes()
         favorites = get_object_or_404(
             Favorite, user=user, recipe=recipe
         )
@@ -114,9 +123,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, permission_classes=[IsAuthenticated])
-    def shopping_cart(self, request, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
+    def shopping_cart(self, request):
+        user = RecipeViewSet.users()
+        recipe = RecipeViewSet.recipes()
 
         data = {
             'user': user.id,
@@ -132,9 +141,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete
-    def delete_shopping_cart(self, request, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
+    def delete_shopping_cart(self):
+        user = RecipeViewSet.users()
+        recipe = RecipeViewSet.recipes()
         favorites = get_object_or_404(
             Purchase, user=user, recipe=recipe
         )
@@ -146,7 +155,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_list = {}
         ingredients = IngredientInRecipe.objects.filter(
             recipe__purchases__user=request.user
-        ).values('amount', 'ingredient__name', 'ingredient__measurement_unit')
+        ).values('amount', 'ingredient__name', 'ingredient__measurement_unit') #Дайте пожалуйста подсказку как можно при помощи annotate это сделать?
         for ingredient in ingredients:
             amount = ingredient['amount']
             name = ingredient['ingredient__name']
