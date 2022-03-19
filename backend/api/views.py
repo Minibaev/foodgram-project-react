@@ -87,86 +87,72 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
-    def users(self, request):
+    def recipe_post_method(self, request, AnySerializer, pk):
         user = request.user
-        return user
-
-    def recipes(self, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
-        return recipe
+
+        data = {
+            'user': user.id,
+            'recipe': recipe.id,
+        }
+        serializer = AnySerializer(
+            data=data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def recipe_delete_method(self, request, AnyModel, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        favorites = get_object_or_404(
+            AnyModel, user=user, recipe=recipe
+        )
+        favorites.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, permission_classes=[IsAuthenticated])
     def favorite(self, request):
-        user = RecipeViewSet.users()
-        recipe = RecipeViewSet.recipes()
-
-        data = {
-            'user': user.id,
-            'recipe': recipe.id,
-        }
-        serializer = FavoritesSerializer(
-            data=data,
-            context={'request': request}
+        return self.recipe_post_method(
+            self, request, FavoritesSerializer, pk=None
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
-    def delete_favorite(self):
-        user = RecipeViewSet.users()
-        recipe = RecipeViewSet.recipes()
-        favorites = get_object_or_404(
-            Favorite, user=user, recipe=recipe
+    def delete_favorite(self, request):
+        return self.recipe_delete_method(
+            self, request, Favorite, pk=None
         )
-        favorites.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, permission_classes=[IsAuthenticated])
     def shopping_cart(self, request):
-        user = RecipeViewSet.users()
-        recipe = RecipeViewSet.recipes()
-
-        data = {
-            'user': user.id,
-            'recipe': recipe.id,
-        }
-        serializer = PurchaseSerializer(
-            data=data,
-            context={'request': request}
+        return self.recipe_post_method(
+            self, request, PurchaseSerializer, pk=None
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @shopping_cart.mapping.delete
-    def delete_shopping_cart(self):
-        user = RecipeViewSet.users()
-        recipe = RecipeViewSet.recipes()
-        favorites = get_object_or_404(
-            Purchase, user=user, recipe=recipe
+    def delete_shopping_cart(self, request):
+        return self.recipe_delete_method(
+            self, request, Purchase, pk=None
         )
-        favorites.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         shopping_list = {}
         ingredients = IngredientInRecipe.objects.filter(
             recipe__purchases__user=request.user
-        ).values('amount', 'ingredient__name', 'ingredient__measurement_unit') #Дайте пожалуйста подсказку как можно при помощи annotate это сделать?
+        ).annotate(Sum('amount'))
         for ingredient in ingredients:
             amount = ingredient['amount']
-            name = ingredient['ingredient__name']
-            measurement_unit = ingredient['ingredient__measurement_unit']
+            name = ingredient['name']
+            measurement_unit = ingredient['measurement_unit']
             if name not in shopping_list:
                 shopping_list[name] = {
                     'measurement_unit': measurement_unit,
                     'amount': amount
                 }
             else:
-                shopping_list[name]['amount'] += amount
+                shopping_list[name]['amount'] += ingredient.amount__sum
         wishlist = ([f'{item} - {value["amount"]} '
                      f'{value["measurement_unit"]} \n'
                      for item, value in shopping_list.items()])
