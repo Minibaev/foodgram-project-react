@@ -77,8 +77,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return Purchase.objects.filter(user=request.user,
                                        recipe=obj).exists()
 
-    def get_ingredients_amount(self, ingredients, recipe):
-        tags = self.validated_data['tags']
+    def get_ingredients_amount(self, ingredients, recipe, data):
+        tags = data['tags']
         for tag_id in tags:
             recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
         for ingredient in ingredients:
@@ -90,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredients_amount.save()
 
     def validate(self, data):
-        ingredients = self.data['ingredients']
+        ingredients = data['ingredients']
         ingredients_set = set()
         for ingredient in ingredients:
             if int(ingredient.get('amount')) <= 0:
@@ -110,7 +110,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ('''Время приготовления должно быть
                  больше нуля''')
             )
-        tags = self.validated_data['tags']
+        tags = data['tags']
         if tags is None:
             raise serializers.ValidationError(
                 ('Тег не должен отсутствовать')
@@ -129,14 +129,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         self.get_ingredients_amount(ingredients, instance)
-        #if validated_data.get('image') is not None:
-        #    instance.image = validated_data.get('image')
         return super().update(validated_data)
-        #instance.name = validated_data.get('name')
-        #instance.text = validated_data.get('text')
-        #instance.cooking_time = validated_data.get('cooking_time')
-        #instance.save()
-        #return instance
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
