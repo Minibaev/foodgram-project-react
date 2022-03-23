@@ -1,5 +1,6 @@
 from django.http.response import HttpResponse
 from django.db.models import Sum
+from django.utils import timezone
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -138,24 +139,28 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        shopping_list = {}
+        user = request.user
+        if not user.cart.exists():
+            return Response({
+                'errors': 'Ваш список покупок пуст.'
+                }, status=status.HTTP_400_BAD_REQUEST
+            )
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__purchases__user=request.user
-        ).annotate(Sum('amount'))
-        for ingredient in ingredients:
-            amount = ingredient['amount']
-            name = ingredient['name']
-            measurement_unit = ingredient['measurement_unit']
-            if name not in shopping_list:
-                shopping_list[name] = {
-                    'measurement_unit': measurement_unit,
-                    'amount': amount
-                }
-            else:
-                shopping_list[name]['amount'] += ingredient.amount__sum
-        wishlist = ([f'{item} - {value["amount"]} '
-                     f'{value["measurement_unit"]} \n'
-                     for item, value in shopping_list.items()])
-        response = HttpResponse(wishlist, 'Content-Type: text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shoplist.txt"'
+            recipe__cart__user=user).values(
+                'ingredient__name',
+                'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
+        filename = f'{user.username}_shopping_list.txt'
+        shopping_list = (
+            f'Список покупок({user.first_name})\n'
+            f'{timezone.localtime().strftime("%d/%m/%Y %H:%M")}\n\n'
+        )
+        for ing in ingredients:
+            shopping_list += (f'{ing["ingredient__name"]}: {ing["amount"]} '
+                              f'{ing["ingredient__measurement_unit"]}\n')
+        shopping_list += '\nFoodgram'
+        response = HttpResponse(
+            shopping_list, content_type='text.txt; charset=utf-8'
+        )
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response

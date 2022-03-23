@@ -77,8 +77,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return Purchase.objects.filter(user=request.user,
                                        recipe=obj).exists()
 
-    def get_ingredients_amount(self, ingredients, recipe, data):
-        tags = data['tags']
+    def get_ingredients_amount(self, ingredients, recipe):
+        tags = self.initial_data.get('tags')
         for tag_id in tags:
             recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
         for ingredient in ingredients:
@@ -90,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredients_amount.save()
 
     def validate(self, data):
-        ingredients = data['ingredients']
+        ingredients = self.initial_data.get('ingredients')
         ingredients_set = set()
         for ingredient in ingredients:
             if int(ingredient.get('amount')) <= 0:
@@ -105,12 +105,12 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
             ingredients_set.add(ingredient_id)
         data['ingredients'] = ingredients
-        if int(self.validated_data['cooking_time']) <= 0:
+        if int(self.initial_data.get('cooking_time')) <= 0:
             raise serializers.ValidationError(
                 ('''Время приготовления должно быть
                  больше нуля''')
             )
-        tags = data['tags']
+        tags = self.initial_data.get('tags')
         if tags is None:
             raise serializers.ValidationError(
                 ('Тег не должен отсутствовать')
