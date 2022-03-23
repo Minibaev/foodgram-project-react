@@ -25,7 +25,11 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsOwnerOrAdminOrReadOnly,)
 
-    @action(detail=True, permission_classes=[IsAuthenticated])
+    @action(
+        detail=True,
+        methods=('post',),
+        permission_classes=[IsAuthenticated]
+    )
     def subscribe(self, request, id=None):
         user = request.user
         author = get_object_or_404(User, id=id)
@@ -50,7 +54,11 @@ class CustomUserViewSet(UserViewSet):
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, permission_classes=[IsAuthenticated])
+    @action(
+        detail=False,
+        methods=('post',),
+        permission_classes=[IsAuthenticated]
+    )
     def subscriptions(self, request):
         user = request.user
         queryset = Follow.objects.filter(user=user)
