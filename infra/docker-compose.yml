@@ -22,9 +22,9 @@ services:
   frontend:
     image: minibaevaidar/foodgram_frontend:v1
     volumes:
-      - result_build:/app/result_build/build
+      - ../frontend:/app/result_build/
     depends_on:
-      - db
+      - backend
 
   nginx:
     image: nginx:1.21.1
