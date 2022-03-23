@@ -56,7 +56,6 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=('post',),
         permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
