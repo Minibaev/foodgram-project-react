@@ -9,7 +9,7 @@ services:
       - ./.env
 
   backend:
-    image: minibaevaidar/foodgram_web:latest
+    image: minibaevaidar/foodgram_web1:latest
     restart: always
     volumes:
       - static_value:/app/static/
