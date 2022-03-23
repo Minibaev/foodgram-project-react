@@ -90,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredients_amount.save()
 
     def validate(self, data):
-        ingredients = self.data['ingredients']
+        ingredients = self.initial_data.get('ingredients')
         ingredients_set = set()
         for ingredient in ingredients:
             if int(ingredient.get('amount')) <= 0:
