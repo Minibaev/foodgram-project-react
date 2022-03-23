@@ -71,11 +71,10 @@ class RecipeSerializer(serializers.ModelSerializer):
                                        recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        user = self.context.get('request').user
+        if user.is_anonymous:
             return False
-        return Purchase.objects.filter(user=request.user,
-                                       recipe=obj).exists()
+        return Recipe.objects.filter(cart__user=user, id=obj.id).exists()
 
     def get_ingredients_amount(self, ingredients, recipe):
         tags = self.initial_data.get('tags')
@@ -168,32 +167,6 @@ class ShowFollowerSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
-
-
-class FollowSerializer(serializers.ModelSerializer):
-
-    user = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    author = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
-    class Meta:
-        model = Follow
-        fields = ('user', 'author')
-
-    def validate(self, data):
-        request = self.context.get('request')
-        author_id = data['author'].id
-        if request.user.id == author_id:
-            raise serializers.ValidationError(
-                'Нельзя подписаться на себя'
-            )
-        if Follow.objects.filter(
-                user=request.user,
-                author__id=author_id
-        ).exists():
-            raise serializers.ValidationError(
-                'Вы уже подписаны на этого пользователя'
-            )
-        return data
 
 
 class FavoritesSerializer(serializers.ModelSerializer):
