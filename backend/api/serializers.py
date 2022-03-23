@@ -78,7 +78,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                                        recipe=obj).exists()
 
     def get_ingredients_amount(self, ingredients, recipe, data):
-        tags = data['tags']
+        tags = self.data['tags']
         for tag_id in tags:
             recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
         for ingredient in ingredients:
@@ -90,7 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredients_amount.save()
 
     def validate(self, data):
-        ingredients = data['ingredients']
+        ingredients = self.data['ingredients']
         ingredients_set = set()
         for ingredient in ingredients:
             if int(ingredient.get('amount')) <= 0:
