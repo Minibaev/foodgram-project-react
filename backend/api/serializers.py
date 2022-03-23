@@ -180,6 +180,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     user = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     author = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Follow
@@ -200,6 +201,9 @@ class FollowSerializer(serializers.ModelSerializer):
                 'Вы уже подписаны на этого пользователя'
             )
         return data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()
 
 
 class FavoritesSerializer(serializers.ModelSerializer):
