@@ -33,15 +33,18 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, id=None):
         user = request.user
         author = get_object_or_404(User, id=id)
-        data = {
-            'user': user.id,
-            'author': author.id,
-        }
+        if user == author:
+            return Response({
+                'errors': 'Вы не можете подписываться на самого себя.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if Follow.objects.filter(user=user, author=author).exists():
+            return Response({
+                'errors': 'Вы уже подписаны на данного пользователя.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        follow = Follow.objects.create(user=user, author=author)
         serializer = FollowSerializer(
-            data=data, context={'request': request}
+            follow, context={'request': request}
         )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
