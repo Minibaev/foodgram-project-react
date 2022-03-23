@@ -120,13 +120,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk=None):
         return self.recipe_post_method(
-            self, request, FavoritesSerializer, pk
+            request, FavoritesSerializer, pk
         )
 
     @favorite.mapping.delete
     def delete_favorite(self, request, pk=None):
         return self.recipe_delete_method(
-            self, request, Favorite, pk
+            request, Favorite, pk
         )
 
     @action(
@@ -136,13 +136,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk=None):
         return self.recipe_post_method(
-            self, request, PurchaseSerializer, pk
+            request, PurchaseSerializer, pk
         )
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk=None):
         return self.recipe_delete_method(
-            self, request, Purchase, pk
+            request, Purchase, pk
         )
 
     @action(detail=False, permission_classes=[IsAuthenticated])
