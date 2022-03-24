@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -79,9 +80,29 @@ class ListRecipeSerializer(serializers.ModelSerializer):
         return False
 
 
+class TagListField(serializers.RelatedField):
+
+    def to_representation(self, obj):
+        return {
+            'id': obj.id,
+            'name': obj.name,
+            'color': obj.color,
+            'slug': obj.slug
+        }
+
+    def to_internal_value(self, data):
+        try:
+            return Tag.objects.get(id=data)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(
+                'Недопустимый первичный ключ "404" - объект не существует.'
+            )
+
+
 class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
     author = UserSerializer(read_only=True)
+    tags = TagListField(queryset=Tag.objects.all(), many=True)
     ingredients = IngredientInRecipeSerializer(
         many=True,
     )
