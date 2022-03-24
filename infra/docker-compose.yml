@@ -37,7 +37,6 @@ services:
       - result_build:/usr/share/nginx/html/
       - ../docs/redoc.html:/usr/share/nginx/html/api/docs/redoc.html
     depends_on:
-      - backend
       - frontend
     env_file:
       - ./.env
