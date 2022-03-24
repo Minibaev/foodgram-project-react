@@ -13,9 +13,9 @@ from .models import (Favorite, Follow, Ingredient, IngredientInRecipe,
                      Purchase, Recipe, Tag, User)
 from .paginators import CustomPagination
 from .permissions import IsOwnerOrAdminOrReadOnly
-from .serializers import (FavoritesSerializer, CreateUpdateRecipeSerializer,
+from .serializers import (FavoritesSerializer,
                           IngredientSerializer, PurchaseSerializer,
-                          ListRecipeSerializer, ShowFollowerSerializer,
+                          RecipeSerializer, ShowFollowerSerializer,
                           TagSerializer, UserSerializer)
 
 
@@ -91,13 +91,9 @@ class IngredientsViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
+    serializer_class = RecipeSerializer
     permission_classes = (IsOwnerOrAdminOrReadOnly,)
     filter_class = RecipeFilter
-
-    def get_serializer_class(self):
-        if (self.action == 'list' or self.action == 'retrieve'):
-            return ListRecipeSerializer
-        return CreateUpdateRecipeSerializer
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
