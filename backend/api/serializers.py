@@ -121,43 +121,37 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         fields = ('author', 'tags', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
 
-    def get_ingredients_amount(self, ingredients, recipe):
-        tags = self.initial_data.get('tags')
-        for tag_id in tags:
-            recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
-        for ingredient in ingredients:
-            ingredients_amount = IngredientInRecipe.objects.create(
-                recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount')
-            )
-            ingredients_amount.save()
-
     def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
-        ingredients_set = set()
-        for ingredient in ingredients:
-            if int(ingredient.get('amount')) <= 0:
-                raise serializers.ValidationError(
-                    ('''Значение количества
-                     ингредиентов должно быть больше нуля''')
-                )
-            ingredient_id = ingredient.get('id')
-            if ingredient_id in ingredients_set:
-                raise serializers.ValidationError(
-                    'Ингредиент не должен повторяться.'
-                )
-            ingredients_set.add(ingredient_id)
-        data['ingredients'] = ingredients
-        if int(self.initial_data.get('cooking_time')) <= 0:
+        tags = data['tags']
+        if not tags:
             raise serializers.ValidationError(
-                ('''Время приготовления должно быть
-                 больше нуля''')
+                'Должен быть хотя бы один тег'
             )
-        tags = self.initial_data.get('tags')
-        if tags is None:
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError('Теги не должны повторяться')
+        ingredients = data['ingredients']
+        if not ingredients or len(ingredients) < 1:
             raise serializers.ValidationError(
-                ('Тег не должен отсутствовать')
+                'Минимум должен быть один ингредиент для рецепта'
+            )
+        ingredient_list = []
+        for ingredient_item in ingredients:
+            ingredient = get_object_or_404(
+                Ingredient, id=ingredient_item['id']
+            )
+            if ingredient in ingredient_list:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться'
+                )
+            ingredient_list.append(ingredient)
+            if int(ingredient_item['amount']) <= 0:
+                raise serializers.ValidationError(
+                    'Значение количества ингредиента дожно быть больше 0'
+                )
+        cooking_time = data['cooking_time']
+        if int(cooking_time) < 0:
+            raise serializers.ValidationError(
+                'Время приготовления должно больше нуля'
             )
         return data
 
