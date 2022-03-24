@@ -46,6 +46,15 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'amount', 'measurement_unit')
 
 
+class CreateIngredientRecipeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = IngredientInRecipe
+        fields = ('id', 'amount')
+
+
 class ListRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
     tags = TagSerializer(read_only=True, many=True)
@@ -103,7 +112,7 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
     author = UserSerializer(read_only=True)
     tags = TagListField(queryset=Tag.objects.all(), many=True)
-    ingredients = IngredientInRecipeSerializer(
+    ingredients = CreateIngredientRecipeSerializer(
         many=True,
     )
 
@@ -111,18 +120,6 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('author', 'tags', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
-
-    def get_ingredients_amount(self, ingredients, recipe):
-        tags = self.initial_data.get('tags')
-        for tag_id in tags:
-            recipe.tags.add(get_object_or_404(Tag, pk=tag_id))
-        for ingredient in ingredients:
-            ingredients_amount = IngredientInRecipe.objects.create(
-                recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount')
-            )
-            ingredients_amount.save()
 
     def validate(self, data):
         ingredients = self.initial_data.get('ingredients')
@@ -153,12 +150,16 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create_ingredients(self, ingredients, recipe):
+        ingredients_list = []
         for ingredient in ingredients:
-            IngredientInRecipe.objects.create(
+            ingredient_amount = IngredientInRecipe.objects.create(
                 recipe=recipe,
-                ingredient_id=ingredient['id'],
-                amount=ingredient['amount'],
+                ingredient_id=ingredient.get('id'),
+                amount=ingredient.get('amount')
             )
+            ingredients_list.append(ingredient_amount)
+
+        recipe.ingredients.set(ingredients_list)
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags')
@@ -169,15 +170,20 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
-    def update(self, recipe, validated_data):
-        if 'ingredients' in validated_data:
-            ingredients = validated_data.pop('ingredients')
-            recipe.ingredients.clear()
-            self.create_ingredients(ingredients, recipe)
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
-            recipe.tags.set(tags_data)
-        return super().update(recipe, validated_data)
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        instance.name = validated_data.get('name', instance.name)
+        instance.image = validated_data.get('image', instance.image)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time',
+            instance.cooking_time
+        )
+        instance.save()
+        self._create_ingredients(ingredients, instance)
+        instance.tags.set(tags)
+        return instance
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
