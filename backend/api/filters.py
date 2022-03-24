@@ -18,10 +18,10 @@ class RecipeFilter(filters.FilterSet):
     author = filters.ModelChoiceFilter(
         queryset=User.objects.all()
     )
-    is_favorited = filters.BooleanFilter(
+    is_favorited = filters.NumberFilter(
         method='get_is_favorited'
     )
-    is_in_shopping_cart = filters.BooleanFilter(
+    is_in_shopping_cart = filters.NumberFilter(
         method='get_is_in_shopping_cart'
     )
 
