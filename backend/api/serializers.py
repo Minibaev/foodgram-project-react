@@ -85,8 +85,6 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     ingredients = IngredientInRecipeSerializer(
         many=True,
     )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
