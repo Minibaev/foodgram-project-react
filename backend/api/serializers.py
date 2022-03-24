@@ -111,7 +111,7 @@ class TagListField(serializers.RelatedField):
 class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
     author = UserSerializer(read_only=True)
-    tags = TagListField(queryset=Tag.objects.all(), many=True)
+    #tags = TagListField(queryset=Tag.objects.all(), many=True)
     ingredients = CreateIngredientRecipeSerializer(
         many=True,
     )
