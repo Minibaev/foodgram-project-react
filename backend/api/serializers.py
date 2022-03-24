@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from drf_extra_fields.fields import Base64ImageField
@@ -119,6 +120,7 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         fields = ('author', 'tags', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
 
+    @transaction.atomic
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         image = validated_data.pop('image')
@@ -132,6 +134,7 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags)
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
