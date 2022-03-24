@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -111,7 +110,7 @@ class TagListField(serializers.RelatedField):
 class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(max_length=None, use_url=True)
     author = UserSerializer(read_only=True)
-    #tags = TagListField(queryset=Tag.objects.all(), many=True)
+    tags = TagListField(queryset=Tag.objects.all(), many=True)
     ingredients = CreateIngredientRecipeSerializer(
         many=True,
     )
@@ -150,15 +149,12 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create_ingredients(self, ingredients, recipe):
-        ingredients_list = []
         for ingredient in ingredients:
-            ingredient_amount = IngredientInRecipe.objects.create(
+            IngredientInRecipe.objects.create(
                 recipe=recipe,
-                ingredient_id=ingredient.get('id'),
-                amount=ingredient.get('amount')
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount'],
             )
-            ingredients_list.append(ingredient_amount)
-        recipe.ingredients.set(ingredients_list)
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags')
