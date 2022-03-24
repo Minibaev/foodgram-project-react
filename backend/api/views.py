@@ -96,7 +96,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
-            return  CreateUpdateRecipeSerializer
+            return CreateUpdateRecipeSerializer
         return ListRecipeSerializer
 
     def perform_create(self, serializer):
