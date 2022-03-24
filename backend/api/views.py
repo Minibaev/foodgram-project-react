@@ -16,7 +16,8 @@ from .permissions import IsOwnerOrAdminOrReadOnly
 from .serializers import (FavoritesSerializer,
                           IngredientSerializer, PurchaseSerializer,
                           RecipeSerializer, ShowFollowerSerializer,
-                          TagSerializer, UserSerializer)
+                          TagSerializer, UserSerializer,
+                          RecipeCreateSerializer)
 
 
 class CustomUserViewSet(UserViewSet):
@@ -91,9 +92,13 @@ class IngredientsViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
-    serializer_class = RecipeSerializer
     permission_classes = (IsOwnerOrAdminOrReadOnly,)
     filter_class = RecipeFilter
+
+    def get_serializer_class(self):
+        if self.action == 'create' or self.action == 'partial_update':
+            return RecipeCreateSerializer
+        return RecipeSerializer
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
