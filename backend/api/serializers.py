@@ -202,27 +202,21 @@ class FavoritesSerializer(serializers.ModelSerializer):
         return data
 
 
-class PurchaseSerializer(FavoritesSerializer):
-    class Meta(FavoritesSerializer.Meta):
+class PurchaseSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='recipe.id')
+    name = serializers.ReadOnlyField(source='recipe.name')
+    image = Base64ImageField(source='recipe.image', read_only=True)
+    cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
+
+    class Meta:
         model = Purchase
+        fields = ('id', 'name', 'image', 'cooking_time', 'user', 'recipe')
+        extra_kwargs = {'user': {'write_only': True},
+                        'recipe': {'write_only': True}}
 
     def validate(self, data):
-        request = self.context.get('request')
-        recipe_id = data['recipe'].id
-        purchase_exists = Purchase.objects.filter(
-            user=request.user,
-            recipe__id=recipe_id
-        ).exists()
-
-        if purchase_exists:
-            raise serializers.ValidationError(
-                'В списке покупок такой рецепт есть'
-            )
+        if Purchase.objects.filter(user=data['user'],
+                                   recipe=data['recipe']).exists():
+            raise serializers.ValidationError('Рецепт уже есть в списке'
+                                              ' покупок.')
         return data
-
-    def to_representation(self, instance):
-        request = self.context.get('request')
-        context = {'request': request}
-        return FollowerRecipeSerializer(
-            instance.recipe,
-            context=context).data
