@@ -67,14 +67,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
-        return Favorite.objects.filter(user=request.user,
+        return Favorite.objects.filter(favorites__user=request.user,
                                        recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
-        return Purchase.objects.filter(user=request.user,
+        return Purchase.objects.filter(purchases__user=request.user,
                                        recipe=obj).exists()
 
     def get_ingredients_amount(self, ingredients, recipe):
@@ -117,6 +117,14 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
         return data
 
+    def create_ingredients(self, ingredients, recipe):
+        for ingredient in ingredients:
+            IngredientInRecipe.objects.create(
+                recipe=recipe,
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount'],
+            )
+
     def create(self, validated_data):
         image = validated_data.pop('image')
         ingredients = validated_data.pop('ingredients')
@@ -124,12 +132,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         self.get_ingredients_amount(ingredients, recipe)
         return recipe
 
-    def update(self, instance, validated_data):
-        instance.tags.clear()
-        ingredients = validated_data.pop('ingredients')
-        IngredientInRecipe.objects.filter(recipe=instance).delete()
-        self.get_ingredients_amount(ingredients, instance)
-        return super().update(validated_data)
+    def update(self, recipe, validated_data):
+        if 'ingredients' in validated_data:
+            ingredients = validated_data.pop('ingredients')
+            recipe.ingredients.clear()
+            self.create_ingredients(ingredients, recipe)
+        if 'tags' in validated_data:
+            tags_data = validated_data.pop('tags')
+            recipe.tags.set(tags_data)
+        return super().update(recipe, validated_data)
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
