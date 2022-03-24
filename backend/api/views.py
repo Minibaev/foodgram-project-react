@@ -93,12 +93,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     permission_classes = (IsOwnerOrAdminOrReadOnly,)
     filter_class = RecipeFilter
-    serializer_class = CreateUpdateRecipeSerializer
 
-    #def get_serializer_class(self):
-        #if self.action == 'create' or self.action == 'update':
-        #return CreateUpdateRecipeSerializer
-        #return ListRecipeSerializer
+    def get_serializer_class(self):
+        if (self.action == 'list' or self.action == 'retrieve'):
+            return ListRecipeSerializer
+        return CreateUpdateRecipeSerializer
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
