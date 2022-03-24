@@ -158,7 +158,6 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
                 amount=ingredient.get('amount')
             )
             ingredients_list.append(ingredient_amount)
-
         recipe.ingredients.set(ingredients_list)
 
     def create(self, validated_data):
@@ -170,20 +169,21 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
-    def update(self, instance, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time',
-            instance.cooking_time
-        )
-        instance.save()
-        self._create_ingredients(ingredients, instance)
-        instance.tags.set(tags)
-        return instance
+    def update(self, recipe, validated_data):
+        if 'ingredients' in validated_data:
+            ingredients = validated_data.pop('ingredients')
+            recipe.ingredients.clear()
+            self.create_ingredients(ingredients, recipe)
+        if 'tags' in validated_data:
+            tags_data = validated_data.pop('tags')
+            recipe.tags.set(tags_data)
+        return super().update(recipe, validated_data)
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return ListRecipeSerializer(
+            instance, context=context).data
 
 
 class FollowerRecipeSerializer(serializers.ModelSerializer):
