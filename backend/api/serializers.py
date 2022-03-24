@@ -164,12 +164,16 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
             )
 
     def create(self, validated_data):
-        tags_data = validated_data.pop('tags')
+        tags = validated_data.pop('tags')
         image = validated_data.pop('image')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(image=image, **validated_data)
-        self.get_ingredients_amount(ingredients, recipe)
-        recipe.tags.set(tags_data)
+        ingredients_list = []
+        for ingredient in ingredients:
+            ingredient_amount = IngredientInRecipe.get_or_create(**ingredient)
+            ingredients_list.append(ingredient_amount)
+        recipe.ingredients.set(ingredients_list)
+        recipe.tags.set(tags)
         return recipe
 
     def update(self, recipe, validated_data):
