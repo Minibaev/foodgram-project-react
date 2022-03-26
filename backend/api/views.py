@@ -165,7 +165,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__purchases__user=user).values(
+            purchases__user=user).values(
                 'ingredient__name',
                 'ingredient__measurement_unit'
         ).annotate(amount=Sum('amount'))
