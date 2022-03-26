@@ -9,19 +9,10 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ('^name',)
 
 
-class IngredientInRecipeAdmin(admin.TabularInline):
-    model = IngredientInRecipe
-    fk_name = 'recipe'
-
-
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('author', 'name', 'favorited')
     list_filter = ('author', 'name', 'tags')
     exclude = ('ingredients',)
-
-    inlines = [
-        IngredientInRecipeAdmin,
-    ]
 
     def favorited(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
@@ -46,7 +37,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 
 class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ('recipe', 'ingredient', 'amount')
+    list_display = ('ingredient', 'amount')
 
 
 admin.site.register(Ingredient, IngredientAdmin)
@@ -55,4 +46,4 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(Purchase, PurchaseAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Follow, SubscriptionAdmin)
-admin.site.register(IngredientInRecipe, RecipeIngredientAdmin)
+admin.site.register(IngredientInRecipe)

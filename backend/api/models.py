@@ -56,8 +56,8 @@ class Recipe(models.Model):
         related_name='recipes',
     )
     ingredients = models.ManyToManyField(
-        Ingredient,
-        through='IngredientInRecipe',
+        'IngredientInRecipe',
+        related_name='recipes',
         verbose_name='Ингредиенты',
     )
     tags = models.ManyToManyField(
@@ -80,6 +80,11 @@ class Recipe(models.Model):
         verbose_name='Время приготовления',
         validators=[MinValueValidator(1, message='Не менее 1')],
     )
+    is_favorited = models.BooleanField('В избранном', default=False)
+    is_in_shopping_cart = models.BooleanField(
+        'В списке покупок',
+        default=False
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата публикации',
@@ -101,11 +106,6 @@ class IngredientInRecipe(models.Model):
         verbose_name='Ингредиент',
         related_name='ingredients_amount',
     )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='ingredients_amount',
-    )
     amount = models.PositiveIntegerField(
         verbose_name='Количество ингредиента',
     )
@@ -113,12 +113,6 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'Количество ингредиента'
         verbose_name_plural = 'Количество ингредиентов'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['ingredient', 'recipe'],
-                name='recipe_ingredient_unique',
-            )
-        ]
 
 
 class Favorite(models.Model):

@@ -94,6 +94,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrAdminOrReadOnly,)
     filter_class = RecipeFilter
 
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PUT', 'PATCH'):
+            return CreateUpdateRecipeSerializer
+        return ListRecipeSerializer
+
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
 
